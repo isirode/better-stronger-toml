@@ -6,11 +6,11 @@ It is currently in preview, report bugs [on Github](https://github.com/isirode/b
 
 ## Features
 
-[x] Syntax validation for [TOML 1.0.0](https://toml.io/en/v1.0.0)
-[x] Schema validation with [Json Schema draft-2020-12](https://json-schema.org/draft/2020-12/release-notes.html)
-[x] Default schema & glob pattern associations with schema
-[x] Loading schema in Json or [Hjson](https://hjson.github.io/) 
-[ ] Syntax Hightlighting is not supported yet, but other extensions providing this feature only are available, you can use them conjointly with this extension
+- [x] Syntax validation for [TOML 1.0.0](https://toml.io/en/v1.0.0)
+- [x] Schema validation with [Json Schema draft-2020-12](https://json-schema.org/draft/2020-12/release-notes.html)
+- [x] Default schema & glob pattern associations with schema
+- [x] Loading schema in Json or [Hjson](https://hjson.github.io/) 
+- [ ] Syntax Hightlighting is not supported yet, but other extensions providing this feature only are available, you can use them conjointly with this extension
 
 ### TOML
 
