@@ -4,6 +4,6 @@ All notable changes to the "better-stronger-toml" extension will be documented i
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.0.1]
 
-- Initial release
+- Initial release of Better Stronger TOML (preview).
