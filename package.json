@@ -1,0 +1,124 @@
+{
+	"name": "better-stronger-toml",
+	"displayName": "Better Stronger TOML",
+	"description": "TOML validator with schema validation",
+	"version": "0.0.1",
+	"homepage": "https://github.com/isirode/better-stronger-toml/blob/master/README.md",
+	"repository": {
+    "url": "https://github.com/isirode/better-stronger-toml"
+  },
+  "bugs": {
+    "url": "https://github.com/isirode/better-stronger-toml/issues"
+  },
+	"engines": {
+		"vscode": "^1.65.0"
+	},
+	"publisher": "Isirode",
+	"author": "Onésime Deleham",
+	"license": "See repository's license",
+	"preview": true,
+	"categories": [
+		"Other"
+	],
+	"keywords": [
+		"toml", "schema"
+	],
+	"activationEvents": [
+		"onLanguage:toml"
+	],
+	"languages": [
+		{
+			"id": "TOML",
+			"extensions": [
+				".toml"
+			],
+			"aliases": [
+				"TOML",
+				"toml"
+			]
+		}
+	],
+	"main": "./dist/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "better-stronger-toml.helloWorld",
+				"title": "Hello World"
+			}
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Example configuration",
+			"properties": {
+				"betterStrongerToml.jsonSchema.enabled": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Whether schemas are enabled or not."
+				},
+				"betterStrongerToml.jsonSchema.defaultSchema": {
+					"scope": "resource",
+					"type": "string",
+					"default": "",
+					"description": "Default schema to use."
+				},
+				"betterStrongerToml.jsonSchema.associations": {
+					"scope": "resource",
+					"type": "array",
+					"items": {
+						"type": "object",
+						"title": "association of glob & schema",
+						"properties": {
+							"pattern": {
+									"type": "string",
+									"description": "Glob pattern to match against"
+							},
+							"schema": {
+									"type": "string",
+									"description": "Schema to use"
+							}
+						}
+					},
+					"default": [],
+					"description": "Associations between file pattern & schemas."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run package",
+		"compile": "webpack",
+		"watch": "webpack --watch",
+		"package": "webpack --mode production --devtool hidden-source-map",
+		"compile-tests": "tsc -p . --outDir out",
+		"watch-tests": "tsc -p . -w --outDir out",
+		"pretest": "npm run compile-tests && npm run compile && npm run lint",
+		"lint": "eslint . --ext ts",
+		"test": "node ./out/client/src/test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.65.0",
+		"@types/glob": "^7.2.0",
+		"@types/mocha": "^9.1.0",
+		"@types/node": "14.x",
+		"@typescript-eslint/eslint-plugin": "^5.12.1",
+		"@typescript-eslint/parser": "^5.12.1",
+		"eslint": "^8.9.0",
+		"glob": "^7.2.0",
+		"mocha": "^9.2.1",
+		"typescript": "^4.5.5",
+		"ts-loader": "^9.2.6",
+		"webpack": "^5.69.1",
+		"webpack-cli": "^4.9.2",
+		"@vscode/test-electron": "^2.1.2"
+	},
+	"dependencies": {
+		"ajv": "^8.10.0",
+		"hjson": "^3.2.2",
+		"save": "^2.4.0",
+		"toml-eslint-parser": "^0.3.0",
+		"vscode-languageclient": "^7.0.0",
+		"vscode-languageserver": "^7.0.0",
+		"vscode-languageserver-textdocument": "^1.0.4"
+	}
+}
