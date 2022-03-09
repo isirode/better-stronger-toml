@@ -30,12 +30,12 @@ Features I am currently working on:
  
 ## TODO
 
-[ ] Auto-completion using schema
-[ ] Support [hjson-js](https://github.com/hjson/hjson-js) supplementary features
-[ ] Use [ajv](https://github.com/hjson/hjson-js) to implements [TypeSchema](https://typeschema.org/) syntax or another type of inheritance syntax 
-[ ] Allow user to add specific keywords
-[ ] Commands to transform Toml to Json, Toml to Hjson, Toml to AST etc...
-[ ] Meta schema validation (would use local resource or autorisation to load external resource)
-[ ] Use Toml format for the schema
-[ ] Indicate which schema is applied in the VSCode's UI (maybe which pattern applied also)
-[ ] GIFs for README.md's features
+- [ ] Auto-completion using schema
+- [ ] Support [hjson-js](https://github.com/hjson/hjson-js) supplementary features
+- [ ] Use [ajv](https://github.com/hjson/hjson-js) to implements [TypeSchema](https://typeschema.org/) syntax or another type of inheritance syntax 
+- [ ] Allow user to add specific keywords
+- [ ] Commands to transform Toml to Json, Toml to Hjson, Toml to AST etc...
+- [ ] Meta schema validation (would use local resource or autorisation to load external resource)
+- [ ] Use Toml format for the schema
+- [ ] Indicate which schema is applied in the VSCode's UI (maybe which pattern applied also)
+- [ ] GIFs for README.md's features
