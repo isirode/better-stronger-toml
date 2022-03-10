@@ -7,3 +7,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [0.0.1]
 
 - Initial release of Better Stronger TOML (preview).
+
+## [0.0.2]
+
+- Fixing minor issues (package.json, README.md).

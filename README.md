@@ -79,7 +79,7 @@ The extension allow you to use usual Json schema.
 
 The extension allow you to specify the schema with a less verbose syntax than Json : Hjson.
 
-````hjson
+```hjson
 {
   // You can use comments
   # Properties do not need quotes
@@ -140,6 +140,10 @@ This extension contributes the following settings:
 * `betterStrongerToml.jsonSchema.defaultSchema`: default schema to use, example : "./schema.json"
 * `betterStrongerToml.jsonSchema.associations`: associations between a glob pattern ("**/*.server.toml" for instance) and a schema
 
+## Known Issues
+
+If the extension do not seem to be starting (Runtime status : Not yet activated.), you need to [associate the file extension](https://code.visualstudio.com/docs/getstarted/tips-and-tricks?s=04#_change-language-mode) .toml to the language toml.
+
 ## Release Notes
 
 Users appreciate release notes as you update your extension.
@@ -147,4 +151,9 @@ Users appreciate release notes as you update your extension.
 ### 0.0.1
 
 Initial release of Better Stronger TOML (preview).
+
+### 0.0.2
+
+Fixing minor issues (package.json, README.md).
+
 

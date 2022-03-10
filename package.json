@@ -28,7 +28,7 @@
 	],
 	"languages": [
 		{
-			"id": "TOML",
+			"id": "toml",
 			"extensions": [
 				".toml"
 			],
@@ -40,15 +40,9 @@
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
-		"commands": [
-			{
-				"command": "better-stronger-toml.helloWorld",
-				"title": "Hello World"
-			}
-		],
 		"configuration": {
 			"type": "object",
-			"title": "Example configuration",
+			"title": "Configuration of Better Stronger TOML",
 			"properties": {
 				"betterStrongerToml.jsonSchema.enabled": {
 					"scope": "resource",
