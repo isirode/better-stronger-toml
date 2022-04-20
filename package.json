@@ -2,7 +2,7 @@
 	"name": "better-stronger-toml",
 	"displayName": "Better Stronger TOML",
 	"description": "TOML validator with schema validation",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"homepage": "https://github.com/isirode/better-stronger-toml/blob/master/README.md",
 	"repository": {
     "url": "https://github.com/isirode/better-stronger-toml"

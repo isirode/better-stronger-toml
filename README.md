@@ -9,7 +9,9 @@ It is currently in preview, report bugs [on Github](https://github.com/isirode/b
 - [x] Syntax validation for [TOML 1.0.0](https://toml.io/en/v1.0.0)
 - [x] Schema validation with [Json Schema draft-2020-12](https://json-schema.org/draft/2020-12/release-notes.html)
 - [x] Default schema & glob pattern associations with schema
-- [x] Loading schema in Json or [Hjson](https://hjson.github.io/) 
+- [x] Loading schema in Json or [Hjson](https://hjson.github.io/)
+- [x] Partial support of auto-completion using the schema (it use only first level properties of the schema) & limited to property keys only
+  - Types (including the $ref), the description & examples are indicated
 - [ ] Syntax Hightlighting is not supported yet, but other extensions providing this feature only are available, you can use them conjointly with this extension
 
 ### TOML
@@ -144,16 +146,30 @@ This extension contributes the following settings:
 
 If the extension do not seem to be starting (Runtime status : Not yet activated.), you need to [associate the file extension](https://code.visualstudio.com/docs/getstarted/tips-and-tricks?s=04#_change-language-mode) .toml to the language toml.
 
+Schema constraints are reported at the first line instead of their actual location, but the path is indicated.
+
+Auto-completion using the schema is limited to first level properties (not those included in the definitions) & are limited to property keys.
+
 ## Release Notes
 
 Users appreciate release notes as you update your extension.
 
 ### 0.0.1
 
-Initial release of Better Stronger TOML (preview).
+- Initial release of Better Stronger TOML (preview).
 
 ### 0.0.2
 
-Fixing minor issues (package.json, README.md).
+- Fixing minor issues (package.json, README.md).
+
+### 0.0.3
+
+- Added first version of auto-completion
+  - Limited to first level properties of the schema (properties of definitions are not used)
+  - Limited to property keys
+  - Description is indicated
+  - Examples are indicated
+  - Types are indicated, the $ref is also indicated
+  - Contrainsts are not indicated
 
 

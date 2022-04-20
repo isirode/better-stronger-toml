@@ -12,10 +12,12 @@ import {
   TextDocumentSyncKind,
   InitializeResult,
   NotificationType,
-  DidChangeWatchedFilesParams
+  DidChangeWatchedFilesParams,
+  MarkupContent,
+  MarkupKind
 } from 'vscode-languageserver/node';
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { TextDocument, Position as TextDocumentPosition } from 'vscode-languageserver-textdocument';
 
 import * as fs from 'fs';
 var minimatch = require("minimatch");
@@ -26,7 +28,7 @@ var minimatch = require("minimatch");
 // TODO : use the AST so that we can improve diagnostics
 // TODO : extends so that we can go back to the racine
 import type { AST } from "toml-eslint-parser";
-import { parseTOML, getStaticTOMLValue } from "toml-eslint-parser";
+import { parseTOML, getStaticTOMLValue, ParseError } from "toml-eslint-parser";
 
 //#endregion
 
@@ -40,6 +42,7 @@ var hjson = require('hjson');
 // Check https://github.com/ajv-validator/ajv-keywords
 import Ajv, { ValidateFunction } from "ajv";
 import { ErrorObject } from "ajv";
+import { Position } from 'vscode';
 const ajv = new Ajv({
   validateSchema: false
 });
@@ -160,7 +163,7 @@ let documentSettings: Map<string, Thenable<BetterStrongerTomlSettings>> = new Ma
 // Map schema path to the conf
 interface JsonSchema {
   schemaAsString: string
-  schemaAsObject: object
+  schemaAsObject: any
   ajvSchema: ValidateFunction<unknown>
 }
 // TODO : watch for schema changes
@@ -239,6 +242,18 @@ function loadJsonSchema(schemaPath: string): JsonSchema | undefined {
       error("An unexpected error occurred while loading schema " + schemaPath + " : " + err.message);
       return undefined;
     }
+}
+
+// Info : made for reading a text document for auto-completion but not used anymore
+function loadTextDocumentFromFileUri(fileUri: string): string | undefined {
+  try {
+    const fixedFileUri = cleanUriPath(fileUri);
+    const schemaAsString = fs.readFileSync(fixedFileUri, "utf8");
+    return schemaAsString;
+  } catch (err: any) {
+    error("An unexpected error occurred while loading file " + fileUri + " : " + err.message);
+    return undefined;
+  }
 }
 
 // FIXME : add this to JsonSchema class ?
@@ -350,7 +365,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
           character: Number.MAX_VALUE
         }
       },
-      message: `${error.message}.`,
+      message: `TOML parsing error : ${error.message}.`,
       source: appName
     });
   }
@@ -359,25 +374,60 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
   let applicableSchema: JsonSchema | undefined = getSchemaFromCache(settings, textDocument.uri);
 
   // Schema validation
-  // FIXME : see if https://github.com/Microsoft/vscode-json-languageservice is usable ?
+  // TODO : see if https://github.com/Microsoft/vscode-json-languageservice is usable ?
   if (diagnostics.length === 0 && settings?.jsonSchema.enabled === true && applicableSchema !== undefined && applicableSchema.ajvSchema !== null) {
     const valid = applicableSchema.ajvSchema(tomlAsObject);
     if (!valid) {
       connection.sendNotification(errorNotificationType, {
         schemaExceptions: applicableSchema.ajvSchema.errors?.map((elem: ErrorObject) => elem.message).join("\r")
       });
+      // FIXME : AJV do not report the property in error when matching against a constraint (minimum, type etc)
       applicableSchema.ajvSchema.errors?.forEach(error => {
+        // Info : if it is constraint error, keyword will be "minimum", "maximum" and will not be found on the TOML document
+        // FIXME : instance path will have the shape /server/port, maybe we can do something but seem difficult
+        // {
+        //   instancePath: "/id",
+        //   schemaPath: "#/properties/id/minimum",
+        //   keyword: "minimum",
+        //   params: {
+        //     comparison: ">=",
+        //     limit: 0,
+        //   },
+        //   message: "must be >= 0",
+        // }
+        //
+        info(`An Ajv error occurred : ${error.message}, keyword: ${error.keyword}, propertyName: ${error.propertyName}, instancePath: ${error.instancePath}, schemaPath: ${error.schemaPath}`);
+
         // FIXME : not every errors will be solved this way
         var pos = text.search(`\"${error.keyword}\"`);
-        var startPosition = textDocument.positionAt(pos);
+
+        let startPosition: TextDocumentPosition;
+        let endCharacterPosition: number;
+
+        if (pos === -1) {
+          // TODO : parse the path and attempt to pick correct line
+          startPosition = {
+            line: 0,
+            character: 0
+          };
+          endCharacterPosition = Number.MAX_VALUE;
+        } else {
+          startPosition = textDocument.positionAt(pos);
+          endCharacterPosition = startPosition.character + error.keyword.length;
+        }
+
         var endPosition = {
           line: startPosition.line,
-          character: startPosition.character + error.keyword.length
-        };
-        var message = error.message;
+          character: endCharacterPosition
+        } as Position;
+
+        var message = "Schema error : " + error.message;
         // FIXME : if same key, merge allowed values ?
         if (error.params["allowedValues"] !== null && error.params["allowedValues"] !== undefined) {
           message += ": " + error.params["allowedValues"].join(",");
+        }
+        if (error.instancePath && error.instancePath !== "") {
+          message += ", at " + error.instancePath;
         }
         diagnostics.push({
           severity: DiagnosticSeverity.Warning,
@@ -424,28 +474,125 @@ connection.onDidChangeWatchedFiles((_change: DidChangeWatchedFilesParams) => {
   }
 });
 
-// TODO : completion using schema
-// Example here https://github.com/microsoft/vscode-extension-samples/tree/main/lsp-embedded-language-service
+// FIXME : do not seem triggered when I'm typing inside a string value
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
-  (_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
-    // The pass parameter contains the position of the text document in
-    // which code complete got requested. For the example we ignore this
-    // info and always provide the same completion items.
-    return [
-      {
-        label: 'type',
-        kind: CompletionItemKind.Text,
-        data: 1
+  async (_textDocumentPosition: TextDocumentPositionParams): Promise<CompletionItem[]> => {
+
+    // _textDocumentPosition.textDocument.uri : file:///c%3A/Users/odeleham/wk/vscode/extensions/workspace-test/test.server.toml
+
+    let autoCompleteItems: CompletionItem[] = [];
+    
+    let settings = await getDocumentSettings(_textDocumentPosition.textDocument.uri);
+    let applicableSchema: JsonSchema | undefined = getSchemaFromCache(settings, _textDocumentPosition.textDocument.uri);
+    if (applicableSchema === undefined) {
+      return [];
+    }
+    
+    // Info : We cannot load the document ourselves here because this will not a correct version until the user save it
+    let documentAsString = documents.get(_textDocumentPosition.textDocument.uri)?.getText();
+    
+    if (documentAsString === undefined) {
+      return [];
+    }
+
+    const fixedPosition = {
+      line: _textDocumentPosition.position.line + 1,
+      character: _textDocumentPosition.position.character - 1
+    };
+    let elementToComplete: AST.Token | undefined = undefined;
+    let ast: AST.TOMLProgram;
+    // Info : will throw if property is not completed (character = and a value)
+    try {
+      ast = parseTOML(documentAsString);
+    } catch (exception: any) {
+      if (exception instanceof ParseError) {
+        if (exception.message === "Expected equal (=) token" 
+            || exception.message === "The key, equals sign, and value must be on the same line") {
+
+          let lines = documentAsString.split(/\r\n|\r|\n/);
+          let line = lines[exception.lineNumber - 2];
+          if (line !== undefined && line !== '') {
+            autoCompleteItems = autocompleteProperty(line, applicableSchema.schemaAsObject['properties']);
+          }
+        } else {
+          error(exception.message);
+        }
+      } else {
+        error(exception);
       }
-    ];
+      return autoCompleteItems;
+    }
+    
+    for (const element of ast.tokens) {
+      if (element.loc.start.line !== fixedPosition.line){
+        continue;
+      }
+      // TODO : can obtain property name if in value but it could be a duplicate if in subnode
+      // But we could implement value completion from examples etc... here
+      if (fixedPosition.character >= element.loc.start.column && fixedPosition.character <= element.loc.end.column) {
+        elementToComplete = element;
+      }
+    }
+    
+    if (elementToComplete === undefined) {
+      return [];
+    }
+
+    if (elementToComplete.type === 'Bare') {
+      autoCompleteItems = autocompleteProperty(elementToComplete.value, applicableSchema.schemaAsObject['properties']);
+    }
+
+    return autoCompleteItems;
   }
 );
+
+function autocompleteProperty(key: string, properties: any): CompletionItem[] {
+  const autoCompleteItems: CompletionItem[] = [];
+
+  // TODO : autocomplete using subtypes properties
+  // TODO : autocomplete subtypes properties using subtypes properties
+  // TODO : autocomplete value string using examples
+  if (properties) {
+    for (const key in properties) {
+      if (key.startsWith(key)) {
+        let item = {
+          label: key,
+          kind: CompletionItemKind.Property,
+          data: key// FIXME: try to use an index ?
+        } as CompletionItem;
+        let property = properties[key];
+        // TODO : indicate constraints in the description part
+        // https://json-schema.org/understanding-json-schema/reference/numeric.html
+        // https://json-schema.org/understanding-json-schema/reference/string.html
+        // required also
+        // TODO : indicate subtype details in the description part
+        let markdownExamples = "";
+        if (property.examples && Array.isArray(property.examples)) {
+          markdownExamples = "\r* " + property.examples.join("\r* ");
+        }
+        if (property.description) {
+          let description: MarkupContent =  {
+            value: property.description + (markdownExamples === "" ? "" : "\r\rExamples:" + markdownExamples),
+            kind: MarkupKind.Markdown
+          };
+          item.documentation = description;
+        }
+        if (property.type || property["$ref"]) {
+          item.detail = (property.type ? property.type : "") + (property["$ref"] ? property["$ref"] : "");
+        }
+        autoCompleteItems.push(item);
+      }
+    }
+  }
+
+  return autoCompleteItems;
+}
 
 // This handler resolves additional information for the item selected in
 // the completion list.
 connection.onCompletionResolve(
-  (item: CompletionItem): CompletionItem => {
+  async (item: CompletionItem): Promise<CompletionItem> => {
     /*
     if (item.data === 1) {
       item.detail = 'TypeScript details';
@@ -455,6 +602,7 @@ connection.onCompletionResolve(
       item.documentation = 'JavaScript documentation';
     }
     */
+  
     return item;
   }
 );
